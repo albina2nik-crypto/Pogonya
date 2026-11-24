@@ -1,0 +1,118 @@
+#pragma once
+#include "CoreMinimal.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameStateBase.h"
+#include "GameFramework/HUD.h"
+#include "GameFramework/PlayerController.h"
+#include "ChaseGame.generated.h"
+
+class UStaticMeshComponent;
+class USpringArmComponent;
+class UCameraComponent;
+
+UCLASS()
+class POGONYA_API AChaseState : public AGameStateBase {
+    GENERATED_BODY()
+public:
+    UPROPERTY(Replicated) float Remaining = 360;
+    UPROPERTY(Replicated) bool bStarted = false;
+    UPROPERTY(Replicated) bool bFinished = false;
+    UPROPERTY(Replicated) bool bGateOpen = false;
+    UPROPERTY(Replicated) FString Result;
+    UPROPERTY(Replicated) int32 Escaped = 0;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const override;
+};
+
+UCLASS()
+class POGONYA_API AChasePickup : public AActor {
+    GENERATED_BODY()
+public:
+    AChasePickup();
+    UPROPERTY(VisibleAnywhere) UStaticMeshComponent* Mesh;
+    UPROPERTY(VisibleAnywhere) UStaticMeshComponent* KeyShaft;
+    UPROPERTY(VisibleAnywhere) UStaticMeshComponent* KeyTooth;
+    UPROPERTY(ReplicatedUsing=OnRep_Kind) bool bKey = false;
+    UFUNCTION() void OnRep_Kind();
+    virtual void Tick(float Delta) override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const override;
+};
+
+UCLASS()
+class POGONYA_API AChaseCharacter : public ACharacter {
+    GENERATED_BODY()
+public:
+    AChaseCharacter();
+    virtual void BeginPlay() override;
+    virtual void Tick(float Delta) override;
+    virtual void SetupPlayerInputComponent(UInputComponent* Input) override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const override;
+    UPROPERTY(ReplicatedUsing=RefreshLook) bool bHunter = false;
+    UPROPERTY(ReplicatedUsing=RefreshLook) bool bStick = false;
+    UPROPERTY(Replicated) bool bKey = false;
+    UPROPERTY(Replicated) int32 Lives = 3;
+    UPROPERTY(ReplicatedUsing=RefreshLook) bool bOut = false;
+    UPROPERTY(Replicated) bool bEscaped = false;
+    UPROPERTY(Replicated) float LastSwing = -10;
+    UPROPERTY(Replicated) float LastHit = -10;
+    UPROPERTY(VisibleAnywhere) USpringArmComponent* Arm;
+    UPROPERTY(VisibleAnywhere) UCameraComponent* Camera;
+    UPROPERTY(VisibleAnywhere) USceneComponent* Figure;
+    UPROPERTY(VisibleAnywhere) UStaticMeshComponent* Body;
+    UPROPERTY(VisibleAnywhere) UStaticMeshComponent* Mask;
+    UPROPERTY(VisibleAnywhere) UStaticMeshComponent* LeftLeg;
+    UPROPERTY(VisibleAnywhere) UStaticMeshComponent* RightLeg;
+    UPROPERTY(VisibleAnywhere) UStaticMeshComponent* LeftArm;
+    UPROPERTY(VisibleAnywhere) UStaticMeshComponent* RightArm;
+    UPROPERTY(VisibleAnywhere) UStaticMeshComponent* Weapon;
+    UFUNCTION() void RefreshLook();
+    UFUNCTION(Server, Reliable) void Interact();
+    UFUNCTION(Server, Reliable) void Attack();
+    UFUNCTION(Server, Reliable) void SetSprint(bool Enabled);
+    void Hurt();
+    bool bBot = false;
+    FVector BotTarget;
+    float NextDecision = 0;
+    void MoveForward(float V);
+    void MoveRight(float V);
+    void LookYaw(float V);
+    void LookPitch(float V);
+    void SprintOn();
+    void SprintOff();
+private:
+    UStaticMeshComponent* Part(FName Name, USceneComponent* Parent, const TCHAR* Shape, FVector Pos, FVector Scale);
+};
+
+UCLASS()
+class POGONYA_API AChaseController : public APlayerController {
+    GENERATED_BODY()
+public:
+    virtual void SetupInputComponent() override;
+    UFUNCTION(Server, Reliable) void RestartRound();
+};
+
+UCLASS()
+class POGONYA_API AChaseMode : public AGameModeBase {
+    GENERATED_BODY()
+public:
+    AChaseMode();
+    virtual void BeginPlay() override;
+    virtual void PostLogin(APlayerController* Player) override;
+    virtual void Logout(AController* Player) override;
+    virtual void Tick(float Delta) override;
+    void StartRound();
+    void ResolveRound();
+    void RunSelfTest();
+    FVector RandomHidingSpot() const;
+    static FVector GateLocation() { return FVector(0, 2700, 100); }
+private:
+    float LobbyTime = 8;
+    bool bNeedRosterCheck = false;
+};
+
+UCLASS()
+class POGONYA_API AChaseHUD : public AHUD {
+    GENERATED_BODY()
+public:
+    virtual void DrawHUD() override;
+};

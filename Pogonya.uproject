@@ -1,0 +1,38 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.8",
+  "Category": "",
+  "Description": "",
+  "Plugins": [
+    {
+      "Name": "ModelingToolsEditorMode",
+      "Enabled": true,
+      "TargetAllowList": [
+        "Editor"
+      ]
+    },
+    {
+      "Name": "GameplayStateTree",
+      "Enabled": true
+    },
+    {
+      "TargetAllowList": [
+        "Editor"
+      ],
+      "Enabled": true,
+      "Name": "PythonScriptPlugin"
+    }
+  ],
+  "Modules": [
+    {
+      "Type": "Runtime",
+      "LoadingPhase": "Default",
+      "Name": "Pogonya"
+    },
+    {
+      "Type": "Editor",
+      "LoadingPhase": "PostEngineInit",
+      "Name": "PogonyaGraphEditor"
+    }
+  ]
+}
